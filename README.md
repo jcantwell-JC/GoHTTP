@@ -15,3 +15,8 @@ go install GoHTTP/stringutil
 go install GoHTTP/hello
 ../bin/hello
 ```
+
+#### run unit test
+```
+go test GoHTTP/hello
+```
