@@ -18,5 +18,5 @@ go install GoHTTP/hello
 
 #### run unit test
 ```
-go test GoHTTP/hello
+go test GoHTTP/hash
 ```
