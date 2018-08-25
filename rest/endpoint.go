@@ -17,19 +17,21 @@ import (
 
 // InProgress tracker for hashing; used in shutdown to ensure all hashing work has completed
 var hashInProgress = false;
-// tracker for the total number of times the /hash endpoint has been called
-var totalHashCalls = 0;
 
-// defines an error message structure- to make an error just a little more pretty
+// defines an error message structure- to make an error a little pretty
 type ErrorMessage struct {
     Error string
 }
 
-// stats endpoint return struct
+// stats endpoint return message format
 type Stats struct {
-    Total int
-    AverageTime string
+    NumberCalls int
+    AverageTime float64
 }
+
+// initialize empty slice of time.Duration.
+// This will track the running total time it takes for the /hash endpoint to return
+var summedHashResponseTimes []time.Duration
 
 //////////////////////////////////////////////
 ////////////////// Handlers //////////////////
@@ -38,7 +40,7 @@ type Stats struct {
 func hashHandler(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
       case "POST":
-        totalHashCalls++ // we've been called. increment
+        start := time.Now() // capture starting time
         r.ParseForm()
         hashInProgress = true;
         fmt.Printf("Waiting 5 sec..\n")
@@ -46,7 +48,8 @@ func hashHandler(w http.ResponseWriter, r *http.Request) {
         hash := generate_hash(r.Form["password"][0])
         hashInProgress = false;
         write200Msg(w, []byte(hash))
-        defer elapsed("/hash")()
+        elapsed := time.Since(start) // caculate how much time has passed
+        addSummedResponseTime(elapsed, summedHashResponseTimes) // add elapsed time to slice
       default:
         writeErrorMsg(w, r.Method + " is not supported", http.StatusNotFound)
   }
@@ -55,7 +58,7 @@ func hashHandler(w http.ResponseWriter, r *http.Request) {
 func statsHandler(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
     case "GET":
-      m := Stats{totalHashCalls, ""}
+      m := Stats{len(summedHashResponseTimes), calcAverageResponseTime()}
       jsonMessage, err := json.Marshal(m) // create json message with password hash
       if err != nil {
         writeErrorMsg(w, "Issue fetching data", http.StatusNotFound)
@@ -119,14 +122,28 @@ func generate_hash(s string) string {
     sha_512 := sha512.New()
     sha_512.Write([]byte(s))
     sha := base64.StdEncoding.EncodeToString(sha_512.Sum(nil))
-    fmt.Printf("returing sha_512: %s\n",sha)
-    return sha+"\n"
+    return sha
 }
 
-func elapsed(what string) func() {
-    start := time.Now()
-    return func() {
-        mytime := time.Since(start)
-        fmt.Printf("%s took %v\n", what, mytime)
+func addSummedResponseTime(newValue time.Duration, summedHashResponseTimes []time.Duration) []time.Duration{
+    fmt.Printf("calling addSummedResponseTime")
+    microSecValue := newValue / 1000 // time.Duration stores values in nanoseconds. convert to mircoseconds
+    if len(summedHashResponseTimes) > 1 {
+      // get last summed value and caculate new summed total
+      oldValue := summedHashResponseTimes[len(summedHashResponseTimes)-1]
+      sum := oldValue + microSecValue
+      summedHashResponseTimes = append(summedHashResponseTimes, sum)
+    } else { // if empty, initalize with microSecond
+      summedHashResponseTimes = append(summedHashResponseTimes, microSecValue)
     }
+    return summedHashResponseTimes
+}
+
+func calcAverageResponseTime() float64 {
+  if len(summedHashResponseTimes) > 1 {
+    countResponseTimes := len(summedHashResponseTimes)
+    sum := summedHashResponseTimes[countResponseTimes-1] // last value is the sum
+    return (float64(sum))/float64(countResponseTimes)
+  }
+  return float64(0)
 }
