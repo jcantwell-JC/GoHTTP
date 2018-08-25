@@ -13,6 +13,10 @@ func TestGenHash(t *testing.T) {
   }
 }
 
+func TestWriteErrorMsg(t *testing.T) {
+
+}
+
 // func TestPostHashEndpointSucceeds(t *testing.T) {
 //   // Build the request
 // 	resp, err :=  http.Post("http://localhost:8080/hash", "application/json", bytes.NewBuffer([]byte("angryMonkey")))
