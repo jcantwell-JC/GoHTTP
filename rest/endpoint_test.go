@@ -7,7 +7,7 @@ import (
   "net/http/httptest"
   "io/ioutil"
   "strings"
-  //"bytes"
+  "bytes"
   "encoding/json"
   "math"
   "fmt"
@@ -106,250 +106,250 @@ func TestGetStatsEndpointSucceedsOneHashCall(t *testing.T) {
 //////////////// Unit Tests //////////////////
 //////////////////////////////////////////////
 
-// func TestGenHash(t *testing.T) {
-//   hash := generate_hash("angryMonkey")
-//   if hash != "ZEHhWB65gUlzdVwtDQArEyx+KVLzp/aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A+gf7Q==" {
-//    t.Errorf("Hash was incorrect. got %s, want ZEHhWB65gUlzdVwtDQArEyx+KVLzp/aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A+gf7Q== ", hash)
-//   }
-// }
-//
-// func TestAddSummedResponseTimeAppends1ElementCorrectly(t *testing.T) {
-//   // add repsonseTime
-//   summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns"})
-//
-//   // assert responseTimes slice is size 1
-//   if len(summedHashResponseTimes) != 1 {
-//     t.Errorf("Expected length summedHashResponseTimes to be 1. got %d", len(summedHashResponseTimes))
-//   }
-//   // assert responseTime value is 1 microSecond
-//   if summedHashResponseTimes[0] != 1 {
-//     t.Errorf("Expected length summedHashResponseTimes to be 1. got %d", summedHashResponseTimes[0])
-//   }
-// }
-//
-// func TestAddSummedResponseTimeAppends2ElementCorrectly(t *testing.T) {
-//   // add 2 repsonseTimes
-//   summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "1000ns"})
-//
-//   // assert responseTimes slice is size 2
-//   if len(summedHashResponseTimes) != 2 {
-//     t.Errorf("Expected length summedHashResponseTimes to be 2. got %d", len(summedHashResponseTimes))
-//   }
-//   // assert first responseTime value is 1 microSecond
-//   if summedHashResponseTimes[0] != 1 {
-//     t.Errorf("Expected length summedHashResponseTimes to be 1. got %d", summedHashResponseTimes[0])
-//   }
-//   // assert second responseTime value is 2 microSecond; 1 + 1
-//   if summedHashResponseTimes[1] != 2 {
-//     t.Errorf("Expected length summedHashResponseTimes to be 2. got %d", summedHashResponseTimes[1])
-//   }
-// }
-//
-// func TestCalcAverageResponseTimeNoTimes(t *testing.T) {
-//   var summedHashResponseTimes []time.Duration
-//   avg := calcAverageResponseTime(summedHashResponseTimes)
-//   if avg != 0 {
-//     t.Errorf("Expected calcAverageResponseTime to return 0. got %f", avg)
-//   }
-// }
-//
-// func TestCalcAverageResponseTimeIsCorrectSize1(t *testing.T) {
-//   // initalize variables
-//   summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns"})
-//
-//   // now test
-//   avg := calcAverageResponseTime(summedHashResponseTimes)
-//   if avg != 1 {
-//     t.Errorf("Expected calcAverageResponseTime to return 1. got %f", avg)
-//   }
-// }
-//
-// func TestCalcAverageResponseTimeIsCorrectSize2(t *testing.T) {
-//   summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "2000ns"})
-//
-//   // now test
-//   avg := calcAverageResponseTime(summedHashResponseTimes)
-//   if avg != 1.5 {
-//     t.Errorf("Expected calcAverageResponseTime to return 1.5. got %f", avg)
-//   }
-// }
-//
-// func TestCalcAverageResponseTimeIsCorrectSizeMulti(t *testing.T) {
-//   summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "2000ns", "3000ns", "4000ns"})
-//
-//   if summedHashResponseTimes[3] != 10 {
-//     t.Errorf("Expected last summedHashResponseTimes value to be 10. got %d", summedHashResponseTimes[3])
-//   }
-//   // now test
-//   avg := calcAverageResponseTime(summedHashResponseTimes)
-//   if avg != 2.5 {
-//     t.Errorf("Expected calcAverageResponseTime to return 2.5. got %f", avg)
-//   }
-// }
-//
-// func TestWrite200Msg(t *testing.T) {
-//   ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//     write200Msg(w, []byte("Hello World"))
-//   }))
-//   defer ts.Close()
-//
-//   res, err := http.Get(ts.URL)
-// 	if err != nil {
-// 		t.Errorf("Did not expect an error but got one. err %v", err)
-// 	}
-//
-//   if res.StatusCode != 200 {
-//     t.Errorf("Expected 200 error code. Got %d", res.StatusCode)
-//   }
-//
-// 	greeting, err := ioutil.ReadAll(res.Body)
-// 	res.Body.Close()
-// 	if err != nil {
-// 		t.Errorf("Did not expect an error but got one. err %v", err)
-// 	}
-//
-//   if string(greeting) != "Hello World" {
-//     t.Errorf("Expected to get Hello World. Got %s instead", greeting)
-//   }
-// }
-//
-// func TestWrite404Msg(t *testing.T) {
-//   ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//     writeErrorMsg(w, "I AM AN ERROR", 404)
-//   }))
-//   defer ts.Close()
-//
-//   res, err := http.Get(ts.URL)
-// 	if err != nil {
-// 		t.Errorf("Did not expect an error but got one. err %v", err)
-// 	}
-//
-//   if res.StatusCode != 404 {
-//     t.Errorf("Expected 404 error code. Got %d", res.StatusCode)
-//   }
-//
-// 	greeting, err := ioutil.ReadAll(res.Body)
-// 	res.Body.Close()
-// 	if err != nil {
-// 		t.Errorf("Did not expect an error but got one. err %v", err)
-// 	}
-//
-//   if string(greeting) != "{\"Error\":\"I AM AN ERROR\"}" {
-//     t.Errorf("Expected to get {Error:I AM AN ERROR}. Got %s instead", greeting)
-//   }
-// }
-//
-// func TestApp(t *testing.T) {
-//   a := App{}
-//   go a.Start(":8080") // start application server on port 8080
-//   _, err := http.Get("http://localhost:8080/stats")
-// 	if err != nil {
-// 		t.Errorf("Did not expect an error but got one. err %v", err)
-// 	}
-//   a.Shutdown()
-// }
-//
-// //////////////////////////////////////////////
-// //////// Hash Endpoint Unit Tests ////////////
-// //////////////////////////////////////////////
-//
-// func TestPostHashEndpointSucceeds(t *testing.T) {
-//   ts := runHashEndpoint()
-//   defer ts.Close()
-//
-//   ch := make(chan []byte)
-//   go MakeHashRequest(t, ts, ch)
-//
-//   // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
-//   if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
-//     t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
-//   }
-// }
-//
-// func TestPostHashEndpointNoFormFails(t *testing.T) {
-//   ts := runHashEndpoint()
-//   defer ts.Close()
-//
-//   resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader(""))
-// 	if err1 != nil {
-// 		t.Errorf("Expected no error. Error: %s", err1)
-// 	}
-//   if resp.StatusCode != 400 {
-//     t.Errorf("Expected 400 error code. Got %d", resp.StatusCode)
-//   }
-// }
-//
-// func TestPostHashEndpointBadFormFails(t *testing.T) {
-//   ts := runHashEndpoint()
-//   defer ts.Close()
-//
-//   resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("badform"))
-// 	if err1 != nil {
-// 		t.Errorf("Expected no error. Error: %s", err1)
-// 	}
-//   if resp.StatusCode != 400 {
-//     t.Errorf("Expected 400 error code. Got %d", resp.StatusCode)
-//   }
-// }
-//
-// func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
-//   ts := runHashEndpoint()
-//   defer ts.Close()
-//
-//   // Make 10 requests
-//   ch := make(chan []byte)
-//   for i := 0; i < 10; i++ {
-//     go MakeHashRequest(t, ts, ch)
-//   }
-//
-//   // check all 10 requests
-//   for i := 0; i < 10; i++ {
-//     // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
-//     if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
-//       t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
-//     }
-//   }
-// }
-//
-// func TestGetHashEndpointFails(t *testing.T) {
-//   ts := runHashEndpoint()
-//   defer ts.Close()
-//   // Build the request
-// 	resp, err :=  http.Get(ts.URL + "/hash")
-//   if err != nil {
-// 		t.Errorf("Expected no error. Error: %s", err)
-// 	}
-//   if resp.StatusCode != 404 {
-//     t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
-//   }
-// }
-//
-// //////////////////////////////////////////////
-// ////////// Hash Shutdown Unit Tests /////////////
-// //////////////////////////////////////////////
-//
-// func TestPostShutdownEndpointFails(t *testing.T) {
-//   ts := runShutdownEndpoint()
-//   defer ts.Close()
-//   // Build the request
-// 	resp, err :=  http.Post(ts.URL + "/shutdown", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
-//   if err != nil {
-// 		t.Errorf("Expected no error. Error: %s", err)
-// 	}
-//   if resp.StatusCode != 404 {
-//     t.Errorf("Expected 404 error code. Got %d", resp.StatusCode)
-//   }
-// }
-//
-// func TestGetShutdownEndpointSucceeds(t *testing.T) {
-//   ts := runShutdownEndpoint()
-//
-//   // expecting an error
-//   MakeShutdownRequest(t, ts)
-//
-//   // call it again. expecting an error
-//   MakeShutdownRequest(t, ts)
-// }
+func TestGenHash(t *testing.T) {
+  hash := generate_hash("angryMonkey")
+  if hash != "ZEHhWB65gUlzdVwtDQArEyx+KVLzp/aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A+gf7Q==" {
+   t.Errorf("Hash was incorrect. got %s, want ZEHhWB65gUlzdVwtDQArEyx+KVLzp/aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A+gf7Q== ", hash)
+  }
+}
+
+func TestAddSummedResponseTimeAppends1ElementCorrectly(t *testing.T) {
+  // add repsonseTime
+  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns"})
+
+  // assert responseTimes slice is size 1
+  if len(summedHashResponseTimes) != 1 {
+    t.Errorf("Expected length summedHashResponseTimes to be 1. got %d", len(summedHashResponseTimes))
+  }
+  // assert responseTime value is 1 microSecond
+  if summedHashResponseTimes[0] != 1 {
+    t.Errorf("Expected length summedHashResponseTimes to be 1. got %d", summedHashResponseTimes[0])
+  }
+}
+
+func TestAddSummedResponseTimeAppends2ElementCorrectly(t *testing.T) {
+  // add 2 repsonseTimes
+  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "1000ns"})
+
+  // assert responseTimes slice is size 2
+  if len(summedHashResponseTimes) != 2 {
+    t.Errorf("Expected length summedHashResponseTimes to be 2. got %d", len(summedHashResponseTimes))
+  }
+  // assert first responseTime value is 1 microSecond
+  if summedHashResponseTimes[0] != 1 {
+    t.Errorf("Expected length summedHashResponseTimes to be 1. got %d", summedHashResponseTimes[0])
+  }
+  // assert second responseTime value is 2 microSecond; 1 + 1
+  if summedHashResponseTimes[1] != 2 {
+    t.Errorf("Expected length summedHashResponseTimes to be 2. got %d", summedHashResponseTimes[1])
+  }
+}
+
+func TestCalcAverageResponseTimeNoTimes(t *testing.T) {
+  var summedHashResponseTimes []time.Duration
+  avg := calcAverageResponseTime(summedHashResponseTimes)
+  if avg != 0 {
+    t.Errorf("Expected calcAverageResponseTime to return 0. got %f", avg)
+  }
+}
+
+func TestCalcAverageResponseTimeIsCorrectSize1(t *testing.T) {
+  // initalize variables
+  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns"})
+
+  // now test
+  avg := calcAverageResponseTime(summedHashResponseTimes)
+  if avg != 1 {
+    t.Errorf("Expected calcAverageResponseTime to return 1. got %f", avg)
+  }
+}
+
+func TestCalcAverageResponseTimeIsCorrectSize2(t *testing.T) {
+  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "2000ns"})
+
+  // now test
+  avg := calcAverageResponseTime(summedHashResponseTimes)
+  if avg != 1.5 {
+    t.Errorf("Expected calcAverageResponseTime to return 1.5. got %f", avg)
+  }
+}
+
+func TestCalcAverageResponseTimeIsCorrectSizeMulti(t *testing.T) {
+  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "2000ns", "3000ns", "4000ns"})
+
+  if summedHashResponseTimes[3] != 10 {
+    t.Errorf("Expected last summedHashResponseTimes value to be 10. got %d", summedHashResponseTimes[3])
+  }
+  // now test
+  avg := calcAverageResponseTime(summedHashResponseTimes)
+  if avg != 2.5 {
+    t.Errorf("Expected calcAverageResponseTime to return 2.5. got %f", avg)
+  }
+}
+
+func TestWrite200Msg(t *testing.T) {
+  ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    write200Msg(w, []byte("Hello World"))
+  }))
+  defer ts.Close()
+
+  res, err := http.Get(ts.URL)
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if res.StatusCode != 200 {
+    t.Errorf("Expected 200 error code. Got %d", res.StatusCode)
+  }
+
+	greeting, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if string(greeting) != "Hello World" {
+    t.Errorf("Expected to get Hello World. Got %s instead", greeting)
+  }
+}
+
+func TestWrite404Msg(t *testing.T) {
+  ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    writeErrorMsg(w, "I AM AN ERROR", 404)
+  }))
+  defer ts.Close()
+
+  res, err := http.Get(ts.URL)
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if res.StatusCode != 404 {
+    t.Errorf("Expected 404 error code. Got %d", res.StatusCode)
+  }
+
+	greeting, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if string(greeting) != "{\"Error\":\"I AM AN ERROR\"}" {
+    t.Errorf("Expected to get {Error:I AM AN ERROR}. Got %s instead", greeting)
+  }
+}
+
+func TestApp(t *testing.T) {
+  a := App{}
+  go a.Start(":8080") // start application server on port 8080
+  _, err := http.Get("http://localhost:8080/stats")
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+  a.Shutdown()
+}
+
+//////////////////////////////////////////////
+//////// Hash Endpoint Unit Tests ////////////
+//////////////////////////////////////////////
+
+func TestPostHashEndpointSucceeds(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  ch := make(chan []byte)
+  go MakeHashRequest(t, ts, ch)
+
+  // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
+  if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
+    t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
+  }
+}
+
+func TestPostHashEndpointNoFormFails(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader(""))
+	if err1 != nil {
+		t.Errorf("Expected no error. Error: %s", err1)
+	}
+  if resp.StatusCode != 400 {
+    t.Errorf("Expected 400 error code. Got %d", resp.StatusCode)
+  }
+}
+
+func TestPostHashEndpointBadFormFails(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("badform"))
+	if err1 != nil {
+		t.Errorf("Expected no error. Error: %s", err1)
+	}
+  if resp.StatusCode != 400 {
+    t.Errorf("Expected 400 error code. Got %d", resp.StatusCode)
+  }
+}
+
+func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  // Make 10 requests
+  ch := make(chan []byte)
+  for i := 0; i < 10; i++ {
+    go MakeHashRequest(t, ts, ch)
+  }
+
+  // check all 10 requests
+  for i := 0; i < 10; i++ {
+    // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
+    if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
+      t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
+    }
+  }
+}
+
+func TestGetHashEndpointFails(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+  // Build the request
+	resp, err :=  http.Get(ts.URL + "/hash")
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  if resp.StatusCode != 404 {
+    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
+  }
+}
+
+//////////////////////////////////////////////
+////////// Hash Shutdown Unit Tests /////////////
+//////////////////////////////////////////////
+
+func TestPostShutdownEndpointFails(t *testing.T) {
+  ts := runShutdownEndpoint()
+  defer ts.Close()
+  // Build the request
+	resp, err :=  http.Post(ts.URL + "/shutdown", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  if resp.StatusCode != 404 {
+    t.Errorf("Expected 404 error code. Got %d", resp.StatusCode)
+  }
+}
+
+func TestGetShutdownEndpointSucceeds(t *testing.T) {
+  ts := runShutdownEndpoint()
+
+  // expecting an error
+  MakeShutdownRequest(t, ts)
+
+  // call it again. expecting an error
+  MakeShutdownRequest(t, ts)
+}
 
 //////////////////////////////////////////////
 /////////////// Helper Methods ///////////////

@@ -31,6 +31,7 @@ type Stats struct {
 
 // initialize empty slice of time.Duration.
 // This will track the running time total it takes for the /hash endpoint to return
+// used in the /stats endpoint
 var summedHashResponseTimes []time.Duration
 
 //////////////////////////////////////////////
@@ -73,7 +74,6 @@ func (a *App) Shutdown() {
 ////////////////// Handlers //////////////////
 //////////////////////////////////////////////
 
-// makes this unitestable
 type HashHandler struct {}
 // needs a ServeHTTP method from HandlerFunc Interface
 func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -98,13 +98,12 @@ func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         //fmt.Printf("returning hash %s\n", hash)
         write200Msg(w, []byte(hash))
         elapsed := time.Since(start) // caculate how much time has passed
-        summedHashResponseTimes = addSummedResponseTime(elapsed, summedHashResponseTimes) // add elapsed time to slice
+        summedHashResponseTimes = addSummedResponseTime(elapsed, summedHashResponseTimes) // add elapsed time to summedHashResponseTimes slice
       default:
         writeErrorMsg(w, r.Method + " is not supported", http.StatusNotFound)
   }
 }
 
-// makes this unitestable
 type StatsHandler struct {}
 // needs a ServeHTTP method from HandlerFunc Interface
 func (s *StatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +121,6 @@ func (s *StatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   }
 }
 
-// makes this unitestable
 type ShutdownHandler struct {
   srv *http.Server // takes an httpServer
 }
@@ -132,7 +130,7 @@ func (s *ShutdownHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     case "GET":
         for true { // continue looping until hash is not in progress.
           if !hashInProgress {
-            fmt.Printf("OK... shutting down\n")
+            fmt.Printf("Received shutdown request. OKAY... shutting down\n")
             if err := s.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
                 log.Fatal(err)
             }
@@ -201,5 +199,6 @@ func calcAverageResponseTime(summedHashResponseTimes []time.Duration) float64 {
     avg := (float64(sum))/float64(countResponseTimes)
     return avg
   }
+  // the /hash endpoint has never been hit, just return 0
   return float64(0)
 }
