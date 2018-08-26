@@ -8,7 +8,7 @@ import (
   "io/ioutil"
   "strings"
   "bytes"
-  //"encoding/json"
+  "encoding/json"
 )
 
 //////////////////////////////////////////////
@@ -92,7 +92,7 @@ func TestCalcAverageResponseTimeIsCorrectSizeMulti(t *testing.T) {
   // now test
   avg := calcAverageResponseTime(summedHashResponseTimes)
   if avg != 2.5 {
-    t.Errorf("Expected calcAverageResponseTime to return 1.5. got %f", avg)
+    t.Errorf("Expected calcAverageResponseTime to return 2.5. got %f", avg)
   }
 }
 
@@ -105,7 +105,7 @@ func TestPostHashEndpointSucceeds(t *testing.T) {
   defer ts.Close()
 
   ch := make(chan []byte)
-  go MakeHashRequestAndAssert(t, ts, ch)
+  go MakeHashRequest(t, ts, ch)
 
   // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
   if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
@@ -117,10 +117,10 @@ func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
   ts := runHashEndpoint()
   defer ts.Close()
 
-  // Build the request using a byte channel
+  // Make 10 requests
   ch := make(chan []byte)
   for i := 0; i < 10; i++ {
-    go MakeHashRequestAndAssert(t, ts, ch)
+    go MakeHashRequest(t, ts, ch)
   }
 
   // check all 10 requests
@@ -130,7 +130,6 @@ func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
       t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
     }
   }
-
 }
 
 func TestGetHashEndpointFails(t *testing.T) {
@@ -164,18 +163,48 @@ func TestPostStatsEndpointFails(t *testing.T) {
 }
 
 func TestGetStatsEndpointSucceedsNoData(t *testing.T) {
-  tsStats := runStatsEndpoint()
-  defer tsStats.Close()
-  // Build the request
-	resp, err :=  http.Get(tsStats.URL + "/stats")
-  if err != nil {
-		t.Errorf("Expected no error. Error: %s", err)
-	}
-  // check error code
-  if resp.StatusCode != 200 {
-    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
+  ts := runStatsEndpoint()
+  defer ts.Close()
+
+  ch := make(chan []byte)
+  go MakeStatsRequest(t, ts, ch)
+
+  stats := Stats{}
+  json.Unmarshal(<-ch, stats)
+  if stats.NumberCalls != 0 {
+    t.Errorf("Expected stat.NumberCalls to be 0. got: %v", stats.NumberCalls)
+  }
+  if stats.AverageTime != 0 {
+    t.Errorf("Expected stat.NumberCalls to be 0. got: %v", stats.NumberCalls)
   }
 }
+
+// BROKEN
+// func TestGetStatsEndpointSucceedsOneHashCall(t *testing.T) {
+//   // start Hash Endpoint
+//   ts := runHashEndpoint()
+//   defer ts.Close()
+//   // make Hash Call
+//   ch := make(chan []byte)
+//   go MakeHashRequest(t, ts, ch)
+//
+//   // start stats endpoint
+//   tsStats := runStatsEndpoint()
+//   defer tsStats.Close()
+//
+//   // Make stats request
+//   ch1 := make(chan []byte)
+//   go MakeStatsRequest(t, tsStats, ch1)
+//
+//   stats := Stats{}
+//   json.Unmarshal(<-ch1, stats)
+//   if stats.NumberCalls != 1 {
+//     t.Errorf("Expected stat.NumberCalls to be 1. got: %v", stats.NumberCalls)
+//   }
+//   if stats.AverageTime != 5000000 {
+//     t.Errorf("Expected stat.NumberCalls to be 5000000. got: %v", stats.NumberCalls)
+//   }
+// }
 
 //////////////////////////////////////////////
 /////////////// Helper Methods ///////////////
@@ -191,19 +220,19 @@ func generateSummedHashResponseTimes(timeDurrations []string) []time.Duration{
   return summedHashResponseTimes
 }
 
-func runHashEndpoint() *httptest.Server{
+func runHashEndpoint() *httptest.Server {
   handler := &HashHandler{}
   ts := httptest.NewServer(handler)
   return ts
 }
 
-func runStatsEndpoint() *httptest.Server{
+func runStatsEndpoint() *httptest.Server {
   statshandler := &StatsHandler{}
   ts := httptest.NewServer(statshandler)
   return ts
 }
 
-func MakeHashRequestAndAssert(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
+func MakeHashRequest(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
   // Build the request
   resp, err :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("password=angryMonkey"))
 	if err != nil {
@@ -212,6 +241,28 @@ func MakeHashRequestAndAssert(t *testing.T, ts *httptest.Server, ch chan<-[]byte
   if resp.StatusCode != 200 {
     t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
   }
+  greeting, err := ioutil.ReadAll(resp.Body)
+  resp.Body.Close()
+
+  if err != nil {
+    t.Errorf("Expected no error. Error: %s", err)
+  }
+
+  // put the response back on the channel so the tests can check response
+  ch <- greeting
+}
+
+func MakeStatsRequest(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
+  // Build the request
+	resp, err :=  http.Get(ts.URL + "/stats")
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  // check error code
+  if resp.StatusCode != 200 {
+    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
+  }
+
   greeting, err := ioutil.ReadAll(resp.Body)
   resp.Body.Close()
 
