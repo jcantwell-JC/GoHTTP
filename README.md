@@ -17,10 +17,10 @@
 - An error message with an appropriate error code is returned if any issues crop up `{"Error": "some errror message"}`
 
 #### Organization
-`rest/endpoint.go` has the Application struct and starts the server
-`rest/endpoint_test.go` tests the application code and makes sure it starts the server
-`handlers/handler.go` has all the endpoint logic
-`handlers/handler_test.go` tests the helper methods and uses httptest to test the handlers
+- `rest/endpoint.go` has the Application struct and starts the server
+- `rest/endpoint_test.go` tests the application code and makes sure it starts the server
+- `handlers/handler.go` has all the endpoint logic
+- `handlers/handler_test.go` tests the helper methods and uses httptest to test the handlers
 
 #### Setup
 ```
