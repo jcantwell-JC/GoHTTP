@@ -3,20 +3,44 @@
 #### Setup
 ```
 echo $GOPATH # should be set to $HOME/go
-mkdir $GOPATH/src/
-cd $GOPATH/src
+mkdir -p $GOPATH/src/github.com/{{github-user}}
+cd $GOPATH/src/github.com/{{github-user}}
 git clone https://github.com/rdibari84/GoHTTP.git
 ```
 
-#### Make sure its all working
+#### Build Code
 ```
 cd $GOPATH/src
-go install GoHTTP/stringutil
-go install GoHTTP/hello
-../bin/hello
+go build github.com/rdibari84/GoHTTP/rest
 ```
 
-#### run unit test
+#### Run Unit Tests
+- note unit tests use httptest to test api
+- also tests concurrent connections
 ```
-go test GoHTTP/hash
+cd $GOPATH/src
+go test github.com/rdibari84/GoHTTP/rest
 ```
+
+#### Run Server
+```
+cd $GOPATH
+bin/rest
+```
+another way to run
+```
+cd $GOPATH/src/github.com/{{github-user}}/GoHTTP
+go run rest/endpoint.go
+```
+
+#### Manual Test Commands
+```
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
+curl -X GET http://localhost:8080/stats
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
+curl -X GET http://localhost:8080/stats
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
+curl -X GET http://localhost:8080/shutdown
+```
+
+
