@@ -16,6 +16,12 @@
     - Returns: Connection Refused
 - An error message with an appropriate error code is returned if any issues crop up `{"Error": "some errror message"}`
 
+#### Organization
+`rest/endpoint.go` has the Application struct and starts the server
+`rest/endpoint_test.go` tests the application code and makes sure it starts the server
+`handlers/handler.go` has all the endpoint logic
+`handlers/handler_test.go` tests the helper methods and uses httptest to test the handlers
+
 #### Setup
 ```
 echo $GOPATH # should be set to $HOME/go
@@ -27,7 +33,8 @@ git clone https://github.com/rdibari84/GoHTTP.git
 #### Build Code
 ```
 cd $GOPATH/src
-go build github.com/rdibari84/GoHTTP/rest
+go install github.com/rdibari84/GoHTTP/handlers
+go install github.com/rdibari84/GoHTTP/rest
 ```
 
 #### Run Unit Tests
@@ -35,6 +42,7 @@ go build github.com/rdibari84/GoHTTP/rest
 - also tests concurrent connections
 ```
 cd $GOPATH/src
+go test github.com/rdibari84/GoHTTP/handlers
 go test github.com/rdibari84/GoHTTP/rest
 ```
 
