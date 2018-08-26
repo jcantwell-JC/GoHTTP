@@ -9,7 +9,98 @@ import (
   "strings"
   "bytes"
   "encoding/json"
+  "math"
+  "fmt"
 )
+
+/**
+ FIXME: The Stats Unit Tests need to run first.
+ The calls that the other tests make cause these tests to fail
+*/
+//////////////////////////////////////////////
+////////// Stats Unit Tests //////////////////
+//////////////////////////////////////////////
+func TestPostStatsEndpointFails(t *testing.T) {
+  ts := runStatsEndpoint()
+  defer ts.Close()
+  // Build the request
+	resp, err :=  http.Post(ts.URL + "/stats", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  if resp.StatusCode != 404 {
+    t.Errorf("Expected 404 error code. Got %d", resp.StatusCode)
+  }
+}
+
+func TestGetStatsEndpointSucceeds(t *testing.T) {
+  ts := runStatsEndpoint()
+  defer ts.Close()
+
+  ch := make(chan []byte)
+  go MakeStatsRequest(t, ts, ch)
+
+  // wait for channel to return
+  for true {
+    // save off the channel
+    value := <-ch
+    if value != nil {
+      stats := Stats{}
+      json.Unmarshal(value, &stats)
+      if stats.NumberCalls != 0 {
+        t.Errorf("Expected stat.NumberCalls to be 0. got: %d", stats.NumberCalls)
+      }
+      if stats.AverageTime != 0 {
+        t.Errorf("Expected stat.AverageTime to be 0. got: %f", stats.AverageTime)
+      }
+      t.Logf("{ stats.NumberCalls: %d, stats.AverageTime: %f }", stats.NumberCalls, stats.AverageTime)
+    }
+    break;
+  }
+}
+func TestGetStatsEndpointSucceedsOneHashCall(t *testing.T) {
+  // start Hash Endpoint
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  // make hash call
+  ch := make(chan []byte)
+  go MakeHashRequest(t, ts, ch)
+
+  // wait until channel finishes
+  fmt.Printf("waiting for HashRequest to return \n")
+  for true {
+    if (<-ch != nil) {
+      // start stats endpoint
+      tsStats := runStatsEndpoint()
+      defer tsStats.Close()
+
+      // Make stats request
+      ch1 := make(chan []byte)
+      go MakeStatsRequest(t, tsStats, ch1)
+
+      fmt.Printf("waiting for statsRequest to return \n")
+      // wait until channel finishes
+      for true {
+        // save off the channel
+        value := <-ch1
+        if value != nil {
+          stats := Stats{}
+          json.Unmarshal(value, &stats)
+          fmt.Printf("{ stats.NumberCalls: %d, stats.AverageTime: %f }\n", stats.NumberCalls, math.Floor(stats.AverageTime))
+          if stats.NumberCalls != 1 {
+            t.Errorf("Expected stat.NumberCalls to be 1. got: %v", stats.NumberCalls)
+          }
+          if math.Floor(stats.AverageTime/1000000) != 5 {
+            t.Errorf("Expected stat.AverageTime to be 5. got: %v", math.Floor(stats.AverageTime/1000000))
+          }
+        }
+        break;
+      }
+    }
+    break;
+  }
+}
 
 //////////////////////////////////////////////
 //////////////// Unit Tests //////////////////
@@ -146,14 +237,14 @@ func TestGetHashEndpointFails(t *testing.T) {
 }
 
 //////////////////////////////////////////////
-////////// Hash Stats Unit Tests /////////////
+////////// Hash Shutdown Unit Tests /////////////
 //////////////////////////////////////////////
 
-func TestPostStatsEndpointFails(t *testing.T) {
-  ts := runStatsEndpoint()
+func TestPostShutdownEndpointFails(t *testing.T) {
+  ts := runShutdownEndpoint()
   defer ts.Close()
   // Build the request
-	resp, err :=  http.Post(ts.URL + "/stats", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
+	resp, err :=  http.Post(ts.URL + "/shutdown", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
   if err != nil {
 		t.Errorf("Expected no error. Error: %s", err)
 	}
@@ -162,49 +253,15 @@ func TestPostStatsEndpointFails(t *testing.T) {
   }
 }
 
-func TestGetStatsEndpointSucceedsNoData(t *testing.T) {
-  ts := runStatsEndpoint()
-  defer ts.Close()
+func TestGetShutdownEndpointSucceeds(t *testing.T) {
+  ts := runShutdownEndpoint()
 
-  ch := make(chan []byte)
-  go MakeStatsRequest(t, ts, ch)
+  // expecting an error
+  MakeShutdownRequest(t, ts)
 
-  stats := Stats{}
-  json.Unmarshal(<-ch, stats)
-  if stats.NumberCalls != 0 {
-    t.Errorf("Expected stat.NumberCalls to be 0. got: %v", stats.NumberCalls)
-  }
-  if stats.AverageTime != 0 {
-    t.Errorf("Expected stat.NumberCalls to be 0. got: %v", stats.NumberCalls)
-  }
+  // call it again. expecting an error
+  MakeShutdownRequest(t, ts)
 }
-
-// BROKEN
-// func TestGetStatsEndpointSucceedsOneHashCall(t *testing.T) {
-//   // start Hash Endpoint
-//   ts := runHashEndpoint()
-//   defer ts.Close()
-//   // make Hash Call
-//   ch := make(chan []byte)
-//   go MakeHashRequest(t, ts, ch)
-//
-//   // start stats endpoint
-//   tsStats := runStatsEndpoint()
-//   defer tsStats.Close()
-//
-//   // Make stats request
-//   ch1 := make(chan []byte)
-//   go MakeStatsRequest(t, tsStats, ch1)
-//
-//   stats := Stats{}
-//   json.Unmarshal(<-ch1, stats)
-//   if stats.NumberCalls != 1 {
-//     t.Errorf("Expected stat.NumberCalls to be 1. got: %v", stats.NumberCalls)
-//   }
-//   if stats.AverageTime != 5000000 {
-//     t.Errorf("Expected stat.NumberCalls to be 5000000. got: %v", stats.NumberCalls)
-//   }
-// }
 
 //////////////////////////////////////////////
 /////////////// Helper Methods ///////////////
@@ -231,6 +288,13 @@ func runStatsEndpoint() *httptest.Server {
   ts := httptest.NewServer(statshandler)
   return ts
 }
+
+func runShutdownEndpoint() *httptest.Server {
+  shutdownhandlder := &ShutdownHandler{}
+  ts := httptest.NewServer(shutdownhandlder)
+  return ts
+}
+
 
 func MakeHashRequest(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
   // Build the request
@@ -272,4 +336,12 @@ func MakeStatsRequest(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
 
   // put the response back on the channel so the tests can check response
   ch <- greeting
+}
+
+func MakeShutdownRequest(t *testing.T, ts *httptest.Server) {
+  // Build the request
+	_, err :=  http.Get(ts.URL + "/shutdown")
+  if err == nil {
+		t.Errorf("Expected an error since this endpoint shuts down the server.")
+	}
 }

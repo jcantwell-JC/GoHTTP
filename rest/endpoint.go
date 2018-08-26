@@ -183,7 +183,8 @@ func calcAverageResponseTime(summedHashResponseTimes []time.Duration) float64 {
   countResponseTimes := len(summedHashResponseTimes)
   if countResponseTimes > 0 {
     sum := summedHashResponseTimes[countResponseTimes-1] // last value is the sum
-    return (float64(sum))/float64(countResponseTimes)
+    avg := (float64(sum))/float64(countResponseTimes)
+    return avg
   }
   return float64(0)
 }
