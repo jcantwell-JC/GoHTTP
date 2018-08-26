@@ -122,8 +122,10 @@ func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
   for i := 0; i < 10; i++ {
     go MakeHashRequestAndAssert(t, ts, ch)
   }
-  // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
+
+  // check all 10 requests
   for i := 0; i < 10; i++ {
+    // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
     if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
       t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
     }
@@ -173,8 +175,6 @@ func TestGetStatsEndpointSucceedsNoData(t *testing.T) {
   if resp.StatusCode != 200 {
     t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
   }
-
-
 }
 
 //////////////////////////////////////////////
@@ -219,6 +219,6 @@ func MakeHashRequestAndAssert(t *testing.T, ts *httptest.Server, ch chan<-[]byte
     t.Errorf("Expected no error. Error: %s", err)
   }
 
-  // put the response back on the channel so the tests can check
+  // put the response back on the channel so the tests can check response
   ch <- greeting
 }
