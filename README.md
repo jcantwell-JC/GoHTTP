@@ -1,5 +1,21 @@
 # GoHTTP
 
+### Description
+- This application returns a base64 encoded SHA512 hashed password.
+- This application  three resources, each with one method defined
+  * POST `/hash`
+    - takes a urlencoded form parameter called `password`
+    - Returns: text field
+  * GET `/stats`
+    - Returns: json `{ "Total": 0, "Average": 5000000 }`
+    - `Total` is the number of time the /hash endpoint has been hit
+    - `Average` is the average time in microseconds that the /hash endpoint took to respond
+  * GET `/shutdown` 
+    - this endpoint shutsdown the server
+    - it makes sure no hashing work is inProgress
+    - Returns: Connection Refused
+- An error message with an appropriate error code is returned if any issues crop up `{"Error": "some errror message"}`
+
 #### Setup
 ```
 echo $GOPATH # should be set to $HOME/go
@@ -33,14 +49,27 @@ cd $GOPATH/src/github.com/{{github-user}}/GoHTTP
 go run rest/endpoint.go
 ```
 
-#### Manual Test Commands
+#### Manual Passing Test Commands
 ```
 curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
 curl -X GET http://localhost:8080/stats
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
 curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
 curl -X GET http://localhost:8080/stats
 curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
 curl -X GET http://localhost:8080/shutdown
 ```
 
+#### Manual Failing Test Commands
+```
+# invalid methods
+curl -X GET http://localhost:8080/hash
+curl -X POST http://localhost:8080/stats
+curl -X POST http://localhost:8080/shutdown
+
+# empty form
+curl -X POST --data "" http://localhost:8080/hash 
+# form instead of an url encoded form
+curl -X POST --form "password=angryMonkey" http://localhost:8080/hash
+```
 
