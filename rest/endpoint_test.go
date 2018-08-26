@@ -7,21 +7,9 @@ import (
   "net/http/httptest"
   "io/ioutil"
   "strings"
-  "log"
   "bytes"
+  //"encoding/json"
 )
-
-func runHashEndpoint() *httptest.Server{
-  handler := &HashHandler{}
-  ts := httptest.NewServer(handler)
-  return ts
-}
-
-func runStatsEndpoint() *httptest.Server{
-  handler := &StatsHandler{}
-  ts := httptest.NewServer(handler)
-  return ts
-}
 
 //////////////////////////////////////////////
 //////////////// Unit Tests //////////////////
@@ -96,13 +84,97 @@ func TestCalcAverageResponseTimeIsCorrectSize2(t *testing.T) {
 }
 
 func TestCalcAverageResponseTimeIsCorrectSizeMulti(t *testing.T) {
-  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "2000ns", "1000ns", "2000ns"})
+  summedHashResponseTimes = generateSummedHashResponseTimes([]string{"1000ns", "2000ns", "3000ns", "4000ns"})
 
+  if summedHashResponseTimes[3] != 10 {
+    t.Errorf("Expected last summedHashResponseTimes value to be 10. got %d", summedHashResponseTimes[3])
+  }
   // now test
   avg := calcAverageResponseTime(summedHashResponseTimes)
-  if avg != 1.5 {
+  if avg != 2.5 {
     t.Errorf("Expected calcAverageResponseTime to return 1.5. got %f", avg)
   }
+}
+
+//////////////////////////////////////////////
+//////// Hash Endpoint Unit Tests ////////////
+//////////////////////////////////////////////
+
+func TestPostHashEndpointSucceeds(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  ch := make(chan []byte)
+  go MakeHashRequestAndAssert(t, ts, ch)
+
+  // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
+  if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
+    t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
+  }
+}
+
+func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  // Build the request using a byte channel
+  ch := make(chan []byte)
+  for i := 0; i < 10; i++ {
+    go MakeHashRequestAndAssert(t, ts, ch)
+  }
+  // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
+  for i := 0; i < 10; i++ {
+    if bytes.Equal(<-ch, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
+      t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", <-ch)
+    }
+  }
+
+}
+
+func TestGetHashEndpointFails(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+  // Build the request
+	resp, err :=  http.Get(ts.URL + "/hash")
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  if resp.StatusCode != 404 {
+    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
+  }
+}
+
+//////////////////////////////////////////////
+////////// Hash Stats Unit Tests /////////////
+//////////////////////////////////////////////
+
+func TestPostStatsEndpointFails(t *testing.T) {
+  ts := runStatsEndpoint()
+  defer ts.Close()
+  // Build the request
+	resp, err :=  http.Post(ts.URL + "/stats", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  if resp.StatusCode != 404 {
+    t.Errorf("Expected 404 error code. Got %d", resp.StatusCode)
+  }
+}
+
+func TestGetStatsEndpointSucceedsNoData(t *testing.T) {
+  tsStats := runStatsEndpoint()
+  defer tsStats.Close()
+  // Build the request
+	resp, err :=  http.Get(tsStats.URL + "/stats")
+  if err != nil {
+		t.Errorf("Expected no error. Error: %s", err)
+	}
+  // check error code
+  if resp.StatusCode != 200 {
+    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
+  }
+
+
 }
 
 //////////////////////////////////////////////
@@ -119,15 +191,19 @@ func generateSummedHashResponseTimes(timeDurrations []string) []time.Duration{
   return summedHashResponseTimes
 }
 
+func runHashEndpoint() *httptest.Server{
+  handler := &HashHandler{}
+  ts := httptest.NewServer(handler)
+  return ts
+}
 
-//////////////////////////////////////////////
-///////////// Integration Tests //////////////
-//////////////////////////////////////////////
+func runStatsEndpoint() *httptest.Server{
+  statshandler := &StatsHandler{}
+  ts := httptest.NewServer(statshandler)
+  return ts
+}
 
-func TestPostHashEndpointSucceeds(t *testing.T) {
-  ts := runHashEndpoint()
-  defer ts.Close()
-
+func MakeHashRequestAndAssert(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
   // Build the request
   resp, err :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("password=angryMonkey"))
 	if err != nil {
@@ -138,37 +214,11 @@ func TestPostHashEndpointSucceeds(t *testing.T) {
   }
   greeting, err := ioutil.ReadAll(resp.Body)
   resp.Body.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-  // returns the urlencoded version of the hash. i.e + are replaced with - and / are replaced with _
-  if bytes.Equal(greeting, []byte("ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==")) {
-    t.Errorf("Expected POST /hash to return ZEHhWB65gUlzdVwtDQArEyx-KVLzp_aTaRaPlBzYRIFj6vjFdqEb0Q5B8zVKCZ0vKbZPZklJz0Fd7su2A-gf7Q==. Got %s", greeting)
-  }
-}
 
-func TestGetHashEndpointFails(t *testing.T) {
-  ts := runHashEndpoint()
-  defer ts.Close()
-  // Build the request
-	resp, err :=  http.Get(ts.URL + "/hash")
   if err != nil {
-		t.Errorf("Expected no error. Error: %s", err)
-	}
-  if resp.StatusCode != 404 {
-    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
+    t.Errorf("Expected no error. Error: %s", err)
   }
-}
 
-func TestPostStatsEndpointFails(t *testing.T) {
-  ts := runStatsEndpoint()
-  defer ts.Close()
-  // Build the request
-	resp, err :=  http.Post(ts.URL + "/stats", "application/x-www-form-urlencoded", strings.NewReader("somestring"))
-  if err != nil {
-		t.Errorf("Expected no error. Error: %s", err)
-	}
-  if resp.StatusCode != 404 {
-    t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)
-  }
+  // put the response back on the channel so the tests can check
+  ch <- greeting
 }

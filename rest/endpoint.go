@@ -45,24 +45,11 @@ func (a *App) Start(addr string) {
   srv := &http.Server{Addr: addr}
 
   hash := HashHandler{}
-  stats := HashHandler{}
+  stats := StatsHandler{}
+  shutdown := ShutdownHandler{srv}
   http.HandleFunc("/hash", hash.ServeHTTP)
   http.HandleFunc("/stats", stats.ServeHTTP)
-  http.HandleFunc("/shutdown", func(w http.ResponseWriter, r *http.Request) {
-    switch r.Method {
-      case "GET":
-          for true { // continue looping until hash is not in progress.
-            if !hashInProgress {
-              fmt.Printf("OK... shutting down\n")
-              if err := srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
-                  log.Fatal(err)
-              }
-            }
-          }
-      default:
-        writeErrorMsg(w, r.Method + " is not supported", http.StatusNotFound)
-    }
-  })
+  http.HandleFunc("/shutdown", shutdown.ServeHTTP)
 
   fmt.Printf("Starting server\n")
   if err := srv.ListenAndServe(); err != nil {
@@ -90,10 +77,6 @@ func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       case "POST":
         start := time.Now() // capture starting time
         r.ParseForm()
-        // err := r.Form["password"][0]
-        // if err != nil {
-        //   writeErrorMsg(w, "Issue retreiving form data", http.StatusBadRequest)
-        // }
         hashInProgress = true;
         fmt.Printf("Waiting 5 sec..\n")
         time.Sleep(time.Duration(5)*time.Second) // Pause for 5 seconds
@@ -101,7 +84,7 @@ func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         hashInProgress = false;
         write200Msg(w, []byte(hash))
         elapsed := time.Since(start) // caculate how much time has passed
-        addSummedResponseTime(elapsed, summedHashResponseTimes) // add elapsed time to slice
+        summedHashResponseTimes = addSummedResponseTime(elapsed, summedHashResponseTimes) // add elapsed time to slice
       default:
         writeErrorMsg(w, r.Method + " is not supported", http.StatusNotFound)
   }
@@ -120,6 +103,25 @@ func (s *StatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       } else {
         write200Msg(w, jsonMessage)
       }
+    default:
+      writeErrorMsg(w, r.Method + " is not supported", http.StatusNotFound)
+  }
+}
+
+type ShutdownHandler struct {
+  srv *http.Server
+}
+func (s *ShutdownHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+  switch r.Method {
+    case "GET":
+        for true { // continue looping until hash is not in progress.
+          if !hashInProgress {
+            fmt.Printf("OK... shutting down\n")
+            if err := s.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+                log.Fatal(err)
+            }
+          }
+        }
     default:
       writeErrorMsg(w, r.Method + " is not supported", http.StatusNotFound)
   }
