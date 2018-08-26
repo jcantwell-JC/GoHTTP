@@ -8,13 +8,21 @@ cd $GOPATH/src/github.com/{{github-user}}
 git clone https://github.com/rdibari84/GoHTTP.git
 ```
 
-#### Make install code
+#### Build Code
 ```
 cd $GOPATH/src
-go install github.com/rdibari84/GoHTTP/rest
+go build github.com/rdibari84/GoHTTP/rest
 ```
 
-#### run server
+#### Run Unit Tests
+- note unit tests use httptest to test api
+- also tests concurrent connections
+```
+cd $GOPATH/src
+go test github.com/rdibari84/GoHTTP/rest
+```
+
+#### Run Server
 ```
 cd $GOPATH
 bin/rest
@@ -25,10 +33,14 @@ cd $GOPATH/src/github.com/{{github-user}}/GoHTTP
 go run rest/endpoint.go
 ```
 
-#### run unit tests
-- note unit tests use httptest to test api
-- also tests concurrent connections
+#### Manual Test Commands
 ```
-cd $GOPATH/src
-go test github.com/rdibari84/GoHTTP/rest
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
+curl -X GET http://localhost:8080/stats
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
+curl -X GET http://localhost:8080/stats
+curl -X POST --data "password=angryMonkey" http://localhost:8080/hash
+curl -X GET http://localhost:8080/shutdown
 ```
+
+
