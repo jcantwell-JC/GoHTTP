@@ -187,6 +187,68 @@ func TestCalcAverageResponseTimeIsCorrectSizeMulti(t *testing.T) {
   }
 }
 
+func TestWrite200Msg(t *testing.T) {
+  ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    write200Msg(w, []byte("Hello World"))
+  }))
+  defer ts.Close()
+
+  res, err := http.Get(ts.URL)
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if res.StatusCode != 200 {
+    t.Errorf("Expected 200 error code. Got %d", res.StatusCode)
+  }
+
+	greeting, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if string(greeting) != "Hello World" {
+    t.Errorf("Expected to get Hello World. Got %s instead", greeting)
+  }
+}
+
+func TestWrite404Msg(t *testing.T) {
+  ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    writeErrorMsg(w, "I AM AN ERROR", 404)
+  }))
+  defer ts.Close()
+
+  res, err := http.Get(ts.URL)
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if res.StatusCode != 404 {
+    t.Errorf("Expected 404 error code. Got %d", res.StatusCode)
+  }
+
+	greeting, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+
+  if string(greeting) != "{\"Error\":\"I AM AN ERROR\"}" {
+    t.Errorf("Expected to get {Error:I AM AN ERROR}. Got %s instead", greeting)
+  }
+}
+
+func TestApp(t *testing.T) {
+  a := App{}
+  go a.Start(":8080") // start application server on port 8080
+  _, err := http.Get("http://localhost:8080/stats")
+	if err != nil {
+		t.Errorf("Did not expect an error but got one. err %v", err)
+	}
+  a.Shutdown()
+}
+
 //////////////////////////////////////////////
 //////// Hash Endpoint Unit Tests ////////////
 //////////////////////////////////////////////

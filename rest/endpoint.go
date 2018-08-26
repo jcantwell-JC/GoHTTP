@@ -41,12 +41,15 @@ type App struct {
   srv http.Server
 }
 
+// start http server
 func (a *App) Start(addr string) {
   srv := &http.Server{Addr: addr}
 
+  // Create the handlers
   hash := HashHandler{}
   stats := StatsHandler{}
   shutdown := ShutdownHandler{srv}
+  // now serve the handler functions
   http.HandleFunc("/hash", hash.ServeHTTP)
   http.HandleFunc("/stats", stats.ServeHTTP)
   http.HandleFunc("/shutdown", shutdown.ServeHTTP)
@@ -57,6 +60,7 @@ func (a *App) Start(addr string) {
   }
 }
 
+// shutdown http server
 func (a *App) Shutdown() {
   fmt.Printf("OK... shutting down\n")
   if err := a.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
@@ -71,7 +75,7 @@ func (a *App) Shutdown() {
 
 // makes this unitestable
 type HashHandler struct {}
-// needs a ServeHTTP method
+// needs a ServeHTTP method from HandlerFunc Interface
 func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
       case "POST":
@@ -92,7 +96,7 @@ func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // makes this unitestable
 type StatsHandler struct {}
-// needs a ServeHTTP method
+// needs a ServeHTTP method from HandlerFunc Interface
 func (s *StatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
     case "GET":
@@ -109,9 +113,11 @@ func (s *StatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   }
 }
 
+// makes this unitestable
 type ShutdownHandler struct {
-  srv *http.Server
+  srv *http.Server // takes an httpServer
 }
+// needs a ServeHTTP method from HandlerFunc Interface
 func (s *ShutdownHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
     case "GET":
@@ -134,7 +140,7 @@ func (s *ShutdownHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func main() {
   a := App{}
-  a.Start(":8080")
+  a.Start(":8080") // start application server on port 8080
 }
 
 //////////////////////////////////////////////
