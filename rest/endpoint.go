@@ -25,8 +25,8 @@ type ErrorMessage struct {
 
 // stats endpoint return message format
 type Stats struct {
-    NumberCalls int
-    AverageTime float64
+    Total int
+    Average float64
 }
 
 // initialize empty slice of time.Duration.
@@ -95,6 +95,7 @@ func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         time.Sleep(time.Duration(5)*time.Second) // Pause for 5 seconds
         hash := generate_hash(formData[0])
         hashInProgress = false;
+        //fmt.Printf("returning hash %s\n", hash)
         write200Msg(w, []byte(hash))
         elapsed := time.Since(start) // caculate how much time has passed
         summedHashResponseTimes = addSummedResponseTime(elapsed, summedHashResponseTimes) // add elapsed time to slice
@@ -109,8 +110,7 @@ type StatsHandler struct {}
 func (s *StatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
     case "GET":
-      m := Stats{len(summedHashResponseTimes), calcAverageResponseTime(summedHashResponseTimes)}
-      fmt.Printf("returning { NumberCalls: %d, AverageTime: %f}\n", len(summedHashResponseTimes), calcAverageResponseTime(summedHashResponseTimes))
+      m := Stats{Total: len(summedHashResponseTimes), Average: calcAverageResponseTime(summedHashResponseTimes)}
       jsonMessage, err := json.Marshal(m) // create json message with password hash
       if err != nil {
         writeErrorMsg(w, "Issue fetching data", http.StatusInternalServerError)
