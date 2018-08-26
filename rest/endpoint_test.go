@@ -266,6 +266,32 @@ func TestPostHashEndpointSucceeds(t *testing.T) {
   }
 }
 
+func TestPostHashEndpointNoFormFails(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader(""))
+	if err1 != nil {
+		t.Errorf("Expected no error. Error: %s", err1)
+	}
+  if resp.StatusCode != 400 {
+    t.Errorf("Expected 400 error code. Got %d", resp.StatusCode)
+  }
+}
+
+func TestPostHashEndpointBadFormFails(t *testing.T) {
+  ts := runHashEndpoint()
+  defer ts.Close()
+
+  resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("badform"))
+	if err1 != nil {
+		t.Errorf("Expected no error. Error: %s", err1)
+	}
+  if resp.StatusCode != 400 {
+    t.Errorf("Expected 400 error code. Got %d", resp.StatusCode)
+  }
+}
+
 func TestMultiplePostsHashEndpointSucceeds(t *testing.T) {
   ts := runHashEndpoint()
   defer ts.Close()
@@ -360,9 +386,9 @@ func runShutdownEndpoint() *httptest.Server {
 
 func MakeHashRequest(t *testing.T, ts *httptest.Server, ch chan<-[]byte) {
   // Build the request
-  resp, err :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("password=angryMonkey"))
-	if err != nil {
-		t.Errorf("Expected no error. Error: %s", err)
+  resp, err1 :=  http.Post(ts.URL + "/hash", "application/x-www-form-urlencoded", strings.NewReader("password=angryMonkey"))
+	if err1 != nil {
+		t.Errorf("Expected no error. Error: %s", err1)
 	}
   if resp.StatusCode != 200 {
     t.Errorf("Expected 200 error code. Got %d", resp.StatusCode)

@@ -81,10 +81,19 @@ func (h *HashHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       case "POST":
         start := time.Now() // capture starting time
         r.ParseForm()
+        formData := r.Form["password"]
+        if formData == nil {
+          writeErrorMsg(w, "Missing input data in request", 400)
+          return
+        }
+        if len(formData) != 1 {
+          writeErrorMsg(w, "Bad input data in request", 400)
+          return
+        }
         hashInProgress = true;
         fmt.Printf("Waiting 5 sec before returning hash\n")
         time.Sleep(time.Duration(5)*time.Second) // Pause for 5 seconds
-        hash := generate_hash(r.Form["password"][0])
+        hash := generate_hash(formData[0])
         hashInProgress = false;
         write200Msg(w, []byte(hash))
         elapsed := time.Since(start) // caculate how much time has passed
